@@ -22,3 +22,4 @@ const User = mongoose.model("User", userSchema);
  * Make this available to our application.
  */
 module.exports = User;
+
