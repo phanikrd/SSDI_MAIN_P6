@@ -10,8 +10,10 @@ const commentSchema = new mongoose.Schema({
   comment: String,
   // The date and time when the comment was created.
   date_time: { type: Date, default: Date.now },
-  // The ID of the user who created the comment.
+  // The following attributes need to be added
+  // associated user of user_id
   user_id: mongoose.Schema.Types.ObjectId,
+  // comment id
 });
 
 /**
@@ -26,6 +28,8 @@ const photoSchema = new mongoose.Schema({
   user_id: mongoose.Schema.Types.ObjectId,
   // Array of comment objects representing the comments made on this photo.
   comments: [commentSchema],
+  // The following attributes need to be added
+  // photo id
 });
 
 /**
