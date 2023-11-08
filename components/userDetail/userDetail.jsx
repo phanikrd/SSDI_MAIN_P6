@@ -1,58 +1,109 @@
-import React, { Component } from 'react';
-import { Typography, Button } from '@mui/material';
+import React from 'react';
+import {
+  TextField,
+  Button
+} from '@mui/material';
 import './userDetail.css';
-import { Link } from "react-router-dom";
-import axios from 'axios';
+import { Link } from 'react-router-dom';
 
-class UserDetail extends Component {
-    constructor(props) {
-        super(props);
-        this.state = {
-            user: null,
-        };
-    }
+import axios from 'axios'; 
 
-    componentDidMount() {
-        const { match } = this.props;
-        const userId = match.params.userId;
+/**
+ * Define UserDetail, a React component of project #5
+ */
+class UserDetail extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      userDetails: undefined,
+    };
+  }
 
-        // Fetch user details using Axios
-        axios.get(`/user/${userId}`)
-            .then((response) => {
-                const user = response.data;
-                this.setState({ user });
-            })
-            .catch((error) => {
-                console.error('Error fetching user data:', error);
+componentDidMount() {
+    const new_user_id = this.props.match.params.userId;
+    this.handleUserChange(new_user_id);
+}
+
+componentDidUpdate() {
+  const new_user_id = this.props.match.params.userId;
+  const current_user_id = this.state.userDetails?._id;
+  if (current_user_id  !== new_user_id){
+      this.handleUserChange(new_user_id);
+  }
+}
+
+handleUserChange(user_id){
+        axios.get("/user/" + user_id)
+            .then((response) =>
+            {
+                const new_user = response.data;
+                this.setState({
+                    userDetails: new_user
+                });
+                const main_content = "User Details for " + new_user.first_name + " " + new_user.last_name;
+                this.props.changeTopbarContent(main_content);
             });
     }
-
-    handleViewPhotosClick = () => {
-        const { history, match } = this.props;
-        const userId = match.params.userId;
-        history.push(`/photos/${userId}`);
-    };
-
-    render() {
-        const { user } = this.state;
-
-        return (
-            <div className="user-detail-container">
-                <Typography variant='h2'>User Details</Typography>
-                {user && (
-                    <>
-                        <Typography variant='body1'>Name: {`${user.first_name} ${user.last_name}`}</Typography>
-                        <Typography variant='body1'>Location: {user.location}</Typography>
-                        <Typography variant='body1'>Description: {user.description}</Typography>
-                        <Typography variant='body1'>Occupation: {user.occupation}</Typography>
-                        <Button variant="contained" color="primary" onClick={this.handleViewPhotosClick}>
-                            View Photos
-                        </Button>
-                    </>
-                )}
-            </div>
-        );
-    }
+  render() {
+    const { userDetails } = this.state;
+    return userDetails ? (
+      <div>
+        <Button
+          variant="contained"
+          size="medium"
+          component={Link}
+          to={`/photos/${userDetails._id}`}
+          className="button"
+        >
+            USER PHOTOS
+        </Button>
+        <TextField
+          disabled
+          fullWidth
+          id="outlined-disabled"
+          label="First Name"
+          className="custom-field"
+          value={userDetails.first_name}
+        />
+        <TextField
+          disabled
+          fullWidth
+          id="outlined-disabled"
+          label="Last Name"
+          className="custom-field"
+          value={userDetails.last_name}
+        />
+        <TextField
+          disabled
+          fullWidth
+          id="outlined-disabled"
+          label="Location"
+          className="custom-field"
+          value={userDetails.location}
+        />
+        <TextField
+          disabled
+          fullWidth
+          id="outlined-disabled"
+          label="Description"
+          multiline
+          rows={5}
+          className="custom-field"
+          value={userDetails.description}
+        />
+        <TextField
+          disabled
+          fullWidth
+          id="outlined-disabled"
+          label="Occupation"
+          className="custom-field"
+          value={userDetails.occupation}
+        />
+      </div>
+    ) : (
+      <div />
+    );
+  }
 }
 
 export default UserDetail;
