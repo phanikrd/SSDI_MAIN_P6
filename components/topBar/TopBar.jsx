@@ -1,43 +1,60 @@
-import React, { useState, useEffect } from 'react';
-import { AppBar, Toolbar, Typography } from '@mui/material';
-import { withRouter } from 'react-router-dom';
-import axios from 'axios';
+import React from 'react';
+import {
+  AppBar, Toolbar, Typography
+} from '@mui/material';
+import './TopBar.css';
+import axios from 'axios'; 
 
-function TopBar(props) {
-    const [version, setVersion] = useState('');
+/**
+ * Define TopBar, a React componment of project #5
+ */
+class TopBar extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      app_version: undefined
+  };
+  }
 
-    useEffect(() => {
-        // Fetch the version number from the server using Axios
-        axios.get('http://localhost:3000/test/info')
-            .then((response) => {
-                const versionNumber = response.data.load_date_time;
-                setVersion(versionNumber);
-            })
-            .catch((error) => {
-                console.error('Error fetching version number:', error);
-            });
-    }, []);
-
-    const pathname = props.location.pathname;
-    // Extracting the user name from the pathname (if applicable)
-    const userId = pathname.includes('/users/') ? pathname.split('/users/')[1] : null;
-    const photo = pathname.includes('/photos/') ? pathname.split('/photos/')[1] : null;
-
-    return (
-        <AppBar className="topbar-appBar" position="absolute">
-            <Toolbar style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <Typography variant="h5" color="inherit">
-                    Bastions
-                </Typography>
-                <Typography variant="h5" color="inherit">
-                    {userId ? `Details of ${models.userModel(userId).first_name}` : photo ? `Photos of ${models.userModel(photo).first_name}` : ''}
-                </Typography>
-                <Typography variant="body2" color="inherit">
-                    Version: {version}
-                </Typography>
-            </Toolbar>
-        </AppBar>
-    );
+  componentDidMount() {
+    this.handleAppVersionChange();
 }
 
-export default withRouter(TopBar);
+ handleAppVersionChange(){
+    const app_version = this.state.app_version;
+    if (app_version === undefined){
+        axios.get("/test/info")
+            .then((response) =>
+            {
+                this.setState({
+                    app_version: response.data
+                });
+            });
+    }
+}
+
+  render() {
+   const {app_version} = this.state;
+    return app_version ? (
+      <AppBar className="topbar-appBar" position="absolute">
+        <Toolbar className='topbar'>
+          <Typography variant="h5" color="inherit">
+              CodeCrafters TopBar component
+          </Typography>
+          <Typography variant="h5" color="inherit">
+              {this.props.page_content}
+          </Typography>
+          <Typography variant="h5" component="div" color="inherit">Version: {this.state.app_version.version}</Typography> 
+  
+        </Toolbar>
+      </AppBar>
+    ) : (
+      <div />
+    );
+  }
+}
+
+export default TopBar;
+
+
+   
