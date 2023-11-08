@@ -1,163 +1,121 @@
-// userPhotos.jsx
-import React, { useState, useEffect } from 'react';
-import { Typography, Button, Checkbox } from '@mui/material';
-import { Link, useParams, useHistory } from 'react-router-dom';
-import axios from 'axios'; // Import Axios
+import React from 'react';
+import {
+  TextField,
+  Button
+} from '@mui/material';
+import { Link } from 'react-router-dom';
 import './userPhotos.css';
 
-function UserPhotos() {
-    const { userId, photoIndex } = useParams();
-    const [photos, setPhotos] = useState([]);
-    const [advancedFeaturesEnabled, setAdvancedFeaturesEnabled] = useState(false);
-    const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
-    const [showAdvancedFeatures, setShowAdvancedFeatures] = useState(false);
-    const [photoCount, setPhotoCount] = useState(0); // Count of photos
-    const [commentCount, setCommentCount] = useState(0); // Count of comments
-    const history = useHistory();
+import axios from 'axios'; 
 
-    useEffect(() => {
-        // Fetch user photos and counts
-        axios.get(`/photosOfUser/${userId}`)
-            .then((response) => {
-                const userPhotos = response.data;
-                setPhotos(userPhotos);
-                setPhotoCount(userPhotos.length);
+/**
+ * Define UserPhotos, a React componment of project #5
+ */
+class UserPhotos extends React.Component {
+  constructor(props) {
+      super(props);
+      this.state = {
+          userId: undefined,
+          userPhotosDetails: undefined
+      };
+  }
 
-                // Fetch comment count for the user
-                axios.get(`/userCommentsCount/${userId}`)
-                    .then((commentsResponse) => {
-                        setCommentCount(commentsResponse.data.commentCount);
-                    })
-                    .catch((error) => {
-                        console.error('Error fetching user comments count:', error);
-                    });
+  componentDidMount() {
+    const new_user_id = this.props.match.params.userId;
+    this.handleUserChange(new_user_id);
+}
 
-                if (photoIndex) {
-                    setAdvancedFeaturesEnabled(true);
-                    setCurrentPhotoIndex(parseInt(photoIndex));
-                }
-            })
-            .catch((error) => {
-                console.error('Error fetching user photos:', error);
-            });
-    }, [userId, photoIndex]);
+componentDidUpdate() {
+  const new_user_id = this.props.match.params.userId;
+  const current_user_id = this.state.userId;
+  if (current_user_id  !== new_user_id){
+      this.handleUserChange(new_user_id);
+  }
+}
 
-    const navigateToPhoto = (index) => {
-        if (index >= 0 && index < photos.length) {
-            setCurrentPhotoIndex(index);
-        }
-    };
+handleUserChange(user_id){
+  axios.get("/photosOfUser/" + user_id)
+      .then((response) =>
+      {
+          this.setState({
+              userId : user_id,
+              userPhotosDetails: response.data
+          });
+      });
+  axios.get("/user/" + user_id)
+      .then((response) =>
+      {
+          const new_user = response.data;
+          const main_content = "User Photos for " + new_user.first_name + " " + new_user.last_name;
+          this.props.changeTopbarContent(main_content);
+      });
+}
 
-    const handleCheckboxChange = () => {
-        setShowAdvancedFeatures(!showAdvancedFeatures);
-    };
-
-    const handleGoBack = () => {
-        history.push(`/users/${userId}`);
-    };
-
-    const handleNextPhoto = () => {
-        if (currentPhotoIndex < photos.length - 1) {
-            setCurrentPhotoIndex(currentPhotoIndex + 1);
-        }
-    };
-
-    const handlePreviousPhoto = () => {
-        if (currentPhotoIndex > 0) {
-            setCurrentPhotoIndex(currentPhotoIndex - 1);
-        }
-    };
-
-    return (
-        <div className="user-photos-container">
-            <Button variant="contained" color="primary" onClick={handleGoBack}>
-                Go back to user details
-            </Button>
-            <Typography variant="h2">Photos</Typography>
-            <Checkbox
-                checked={showAdvancedFeatures}
-                onChange={handleCheckboxChange}
-                inputProps={{ 'aria-label': 'Show advanced features' }}
-            />
-            Show Advanced Features
-
-            {/* Display photo count bubble (green) */}
-            <div className="count-bubble green">
-                {photoCount}
+  render() {
+      const {userId, userPhotosDetails } = this.state;
+      return userId ? (
+        <div>
+          <Button
+            variant="contained"
+            size="medium"
+            component={Link}
+            to={`/users/${userId}`}
+            className="button"
+          >
+            USER DETAIL
+          </Button>
+          {userPhotosDetails.map((userPhotoDetail) => (
+            <div key={userPhotoDetail._id}>
+              <TextField
+                disabled
+                fullWidth
+                id="outlined-disabled"
+                label="Photo Date"
+                className="custom-field"
+                value={userPhotoDetail.date_time}
+              />
+              <img
+                src={`/images/${userPhotoDetail.file_name}`}
+                className='custom-field'
+              />
+              {userPhotoDetail.comments && userPhotoDetail.comments.map((userComment) => (
+                <div key={`photoDate_${userComment._id}`}>
+                  <TextField
+                    disabled
+                    fullWidth
+                    id="outlined-disabled"
+                    label="Comment Date"
+                    className="custom-field"
+                    value={userComment.date_time}
+                  />    
+                  <TextField
+                    fullWidth
+                    id="outlined-disabled"
+                    component={Link}
+                    to={`/users/${userComment.user._id}`}
+                    label="User"
+                    className="custom-field"
+                    value={`${userComment.user.first_name} ${userComment.user.last_name}`}
+                  />
+                  <TextField
+                    disabled
+                    fullWidth
+                    id="outlined-disabled"
+                    label="Comment"
+                    multiline
+                    rows={5}
+                    className="custom-field"
+                    value={userComment.comment}
+                  />
+                </div>          
+              ))}  
             </div>
-
-            {/* Display comment count bubble (red) */}
-            <div className="count-bubble red">
-                {commentCount}
-            </div>
-
-            {showAdvancedFeatures && (
-                <div className="photo-navigation">
-                    <Button variant="outlined" color="primary" onClick={handlePreviousPhoto}>
-                        Previous
-                    </Button>
-                    <Button variant="outlined" color="primary" onClick={handleNextPhoto}>
-                        Next
-                    </Button>
-                </div>
-            )}
-
-            {showAdvancedFeatures ? (
-                <div className="photo">
-                    <img src={`/images/${photos[currentPhotoIndex].file_name}`} alt={photos[currentPhotoIndex].file_name} />
-                    <p>Creation Date/Time: {photos[currentPhotoIndex].date_time}</p>
-                    <Typography variant="h3">Comments</Typography>
-                    {photos[currentPhotoIndex].comments && photos[currentPhotoIndex].comments.length > 0 ? (
-                        <ul className="comments">
-                            {photos[currentPhotoIndex].comments.map((comment) => (
-                                <li key={comment._id} className="comment">
-                                    <p>Comment Date/Time: {comment.date_time}</p>
-                                    <p>
-                                        Comment by:{' '}
-                                        <Link to={`/users/${comment.user._id}`}>
-                                            {`${comment.user.first_name} ${comment.last_name}`}
-                                        </Link>
-                                    </p>
-                                    <p>Comment: {comment.comment}</p>
-                                </li>
-                            ))}
-                        </ul>
-                    ) : (
-                        <Typography variant="body2">No comments for this photo</Typography>
-                    )}
-                </div>
-            ) : (
-                photos.map((photo, index) => (
-                    <div
-                        key={photo._id}
-                        className={`photo ${index === currentPhotoIndex ? 'visible' : 'hidden'}`}
-                    >
-                        <img src={`/images/${photo.file_name}`} alt={photo.file_name} />
-                        <p>Creation Date/Time: {photo.date_time}</p>
-                        <Typography variant="h3">Comments</Typography>
-                        {photo.comments && photo.comments.length > 0 ? (
-                            <ul className="comments">
-                                {photo.comments.map((comment) => (
-                                    <li key={comment._id} className="comment">
-                                        <p>Comment Date/Time: {comment.date_time}</p>
-                                        <p>
-                                            Comment by:{' '}
-                                            <Link to={`/users/${comment.user._id}`}>
-                                                {`${comment.user.first_name} ${comment.last_name}`}
-                                            </Link>
-                                        </p>
-                                        <p>Comment: {comment.comment}</p>
-                                    </li>
-                                ))}
-                            </ul>
-                        ) : (
-                            <Typography variant="body2">No comments for this photo</Typography>
-                        )}
-                    </div>
-                ))
-            )}
+          ))}
         </div>
-    );
+      ) : (
+        <div />
+      );
+  }
 }
 
 export default UserPhotos;
